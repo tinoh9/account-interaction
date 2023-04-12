@@ -24,7 +24,7 @@ func TestDeposit(t *testing.T) {
 			Address: "Westminster, California",
 			Phone: "(123) 456 789",
 		},
-		Number: 1001,
+		Number: 101,
 		Balance: 0,
 	}
 	account.Deposit(10)
