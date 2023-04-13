@@ -47,3 +47,18 @@ func (a *Account) Withdraw(amount float64) error {
 func (a *Account) Statement() string {
 	return fmt.Sprintf("%v - %v - %v", a.Number, a.Name, a.Balance)
 }
+
+// Transfer method
+func (a *Account) Transfer(amount float64, des *Account) error {
+	if amount <= 0 {
+		return errors.New("You cannot transfer zero or negative amount!")
+	}
+
+	if amount > a.Balance{
+		return errors.New("You cannot withdraw the amount which is larger than the account balance!")
+	}
+
+	a.Withdraw(amount)
+	des.Deposit(amount)
+	return nil
+}
