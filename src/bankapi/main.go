@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,27 +10,11 @@ import (
 	"github.com/msft/bank"
 )
 
-var accounts = map[float64]*bank.Account{}
-
-func statement(w http.ResponseWriter, req *http.Request) {
-    numberqs := req.URL.Query().Get("number")
-
-    if numberqs == "" {
-        fmt.Fprintf(w, "Account number is missing!")
-        return
-    }
-
-    if number, err := strconv.ParseFloat(numberqs, 64); err != nil {
-        fmt.Fprintf(w, "Invalid account number!")
-    } else {
-        account, ok := accounts[number]
-        if !ok {
-            fmt.Fprintf(w, "Account with number %v can't be found!", number)
-        } else {
-            fmt.Fprintf(w, account.Statement())
-        }
-    }
+type CustomAccount struct {
+    *bank.Account
 }
+
+var accounts = map[float64]*CustomAccount{}
 
 func deposit(w http.ResponseWriter, req *http.Request) {
     numberqs := req.URL.Query().Get("number")
@@ -118,28 +103,61 @@ func transfer(w http.ResponseWriter, req *http.Request) {
     }
 }
 
+// Statement method converts endpoint from string format to JSON format
+func (c *CustomAccount) Statement() string {
+    json, err := json.Marshal(c)
+    if err != nil {
+        return err.Error()
+    }
+
+    return string(json)
+}
+
+func statement(w http.ResponseWriter, req *http.Request) {
+    numberqs := req.URL.Query().Get("number")
+
+    if numberqs == "" {
+        fmt.Fprintf(w, "Account number is missing!")
+        return
+    }
+
+    if number, err := strconv.ParseFloat(numberqs, 64); err != nil {
+        fmt.Fprintf(w, "Invalid account number!")
+    } else {
+    if account, ok := accounts[number]; !ok {
+            fmt.Fprintf(w, "Account with number %v can't be found!", number)
+        } else {
+            json.NewEncoder(w).Encode(bank.Statement(account))
+        }
+    }
+}
+
 func main() {
-    accounts[101] = &bank.Account{
-		Customer: bank.Customer{
-			Name: "Adam",
-			Address: "Westminster, California",
-			Phone: "(123) 456 789",
-		},
-		Number: 101,
-	}
+    accounts[101] = &CustomAccount{
+        Account: *bank.Account{
+            Customer: bank.Customer{
+                Name: "Adam",
+                Address: "Westminster, California",
+                Phone: "(123) 456 789",
+            },
+            Number: 101,
+	    },
+    }
 
-    accounts[102] = &bank.Account{
-		Customer: bank.Customer{
-			Name: "Eve",
-			Address: "Los Angeles, California",
-			Phone: "(000) 000 000",
-		},
-		Number: 102,
-	}
+    accounts[102] = &CustomAccount{
+        Account: *bank.Account{
+            Customer: bank.Customer{
+    			Name: "Eve",
+                Address: "Los Angeles, California",
+                Phone: "(000) 000 000",
+            },
+            Number: 102,
+	    },
+    }
 
-	http.HandleFunc("/statement", statement)
+    http.HandleFunc("/statement", statement)
     http.HandleFunc("/deposit", deposit)
     http.HandleFunc("/withdraw", withdraw)
     http.HandleFunc("/transfer", transfer)
-	log.Fatal(http.ListenAndServe("localhost:8080", nil))
+    log.Fatal(http.ListenAndServe("localhost:8080", nil))
 }

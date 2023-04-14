@@ -19,6 +19,11 @@ type Account struct {
 	Balance float64
 }
 
+// Bank interface
+type Bank interface {
+	Statement() string
+}
+
 // Deposit method
 func (a *Account) Deposit(amount float64) error {
 	if amount <= 0 {
@@ -46,6 +51,11 @@ func (a *Account) Withdraw(amount float64) error {
 // Statement method
 func (a *Account) Statement() string {
 	return fmt.Sprintf("%v - %v - %v", a.Number, a.Name, a.Balance)
+}
+
+// New Statement method
+func Statement(b Bank) string {
+	return b.Statement()
 }
 
 // Transfer method
